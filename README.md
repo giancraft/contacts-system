@@ -9,7 +9,7 @@ Sistema CRUD de pessoas e contatos desenvolvido em PHP puro com Doctrine ORM, pa
 - **Back-end:** PHP 8.2 (sem framework)
 - **ORM:** Doctrine ORM 2.x
 - **Banco de dados:** MySQL 8.0
-- **Front-end:** HTML5 + CSS3 + JavaScript (vanilla)
+- **Front-end:** HTML5 + CSS3 + JavaScript
 - **Container:** Docker + Docker Compose
 - **Dependências:** Composer
 
