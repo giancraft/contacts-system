@@ -1,6 +1,6 @@
 # Sistema de Contatos
 
-Sistema CRUD de pessoas e contatos desenvolvido em PHP puro com Doctrine ORM, padrão MVC, Docker e frontend em HTML/CSS/JS vanilla.
+Sistema CRUD de pessoas e contatos desenvolvido em PHP puro com Doctrine ORM, padrão MVC, Docker e frontend em HTML/CSS/JS.
 
 ---
 
@@ -66,11 +66,14 @@ docker compose up -d --build
 #    Você pode acompanhar com:
 docker compose logs -f db
 
+# 4. Instale as dependências
+docker compose exec app composer install
+
 # 4. Crie as tabelas via Doctrine Schema Tool
 docker compose exec app php vendor/bin/doctrine orm:schema-tool:create
 
 # 5. Acesse a aplicação
-# http://localhost:8080
+# http://localhost:8081
 ```
 
 > **Para derrubar:** `docker compose down`  
@@ -99,7 +102,7 @@ export DB_USER=seu_usuario
 export DB_PASS=sua_senha
 
 # 3. Crie o banco de dados manualmente no MySQL
-# CREATE DATABASE contacts_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+# CREATE DATABASE contacts_db;
 
 # 4. Crie as tabelas
 php vendor/bin/doctrine orm:schema-tool:create
@@ -107,7 +110,7 @@ php vendor/bin/doctrine orm:schema-tool:create
 # 5. Inicie o servidor embutido do PHP na pasta public/
 php -S localhost:8080 -t public
 
-# 6. Acesse: http://localhost:8080
+# 6. Acesse: http://localhost:8081
 ```
 
 ---
