@@ -1,0 +1,40 @@
+services:
+  app:
+    build: .
+    container_name: contacts_app
+    ports:
+      - "8081:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: contacts_db
+      DB_USER: contacts_user
+      DB_PASS: contacts_pass
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: contacts_db
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: contacts_db
+      MYSQL_USER: contacts_user
+      MYSQL_PASSWORD: contacts_pass
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "contacts_user", "-pcontacts_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  db_data:

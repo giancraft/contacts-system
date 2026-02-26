@@ -1,0 +1,19 @@
+{
+    "name": "app/contacts-system",
+    "description": "Sistema de contatos com PHP, Doctrine ORM e MVC",
+    "type": "project",
+    "require": {
+        "php": ">=8.1",
+        "doctrine/orm": "^2.17",
+        "doctrine/dbal": "^3.7",
+        "symfony/cache": "^6.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true
+    }
+}

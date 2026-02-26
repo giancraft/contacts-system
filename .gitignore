@@ -1,0 +1,10 @@
+# Dependências
+/vendor/
+
+# Cache do Doctrine
+/var/cache/
+/tmp/
+
+# IDE
+.vscode/
+

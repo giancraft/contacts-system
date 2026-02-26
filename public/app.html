@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Contatos</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        nav {
+            background: #2563eb;
+            padding: 0 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            height: 56px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.2);
+        }
+        nav h1 { color: #fff; font-size: 1.1rem; margin-right: auto; }
+        nav button {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,.5);
+            color: #fff;
+            padding: 6px 18px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: .9rem;
+            transition: background .2s;
+        }
+        nav button:hover, nav button.active {
+            background: rgba(255,255,255,.2);
+            border-color: #fff;
+        }
+
+        main { max-width: 960px; margin: 32px auto; padding: 0 16px; }
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .card {
+            background: #fff;
+            border-radius: 10px;
+            padding: 24px;
+            box-shadow: 0 1px 4px rgba(0,0,0,.1);
+            margin-bottom: 24px;
+        }
+        .card h2 { font-size: 1.1rem; margin-bottom: 16px; color: #1e40af; }
+
+        .form-row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+        .form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 160px; }
+        label { font-size: .8rem; font-weight: 600; color: #555; }
+        input, select {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: .9rem;
+            outline: none;
+            transition: border-color .2s;
+        }
+        input:focus, select:focus { border-color: #2563eb; }
+
+        .btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: .9rem;
+            font-weight: 600;
+            transition: opacity .15s;
+            white-space: nowrap;
+        }
+        .btn:hover { opacity: .85; }
+        .btn-primary   { background: #2563eb; color: #fff; }
+        .btn-secondary { background: #6b7280; color: #fff; }
+        .btn-success   { background: #16a34a; color: #fff; }
+        .btn-danger    { background: #dc2626; color: #fff; }
+        .btn-sm        { padding: 4px 12px; font-size: .8rem; }
+
+        .search-row { display: flex; gap: 8px; margin-bottom: 16px; }
+        .search-row input { flex: 1; }
+
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th { background: #f1f5f9; text-align: left; padding: 10px 14px; font-size: .8rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+        td { padding: 10px 14px; border-top: 1px solid #f1f5f9; vertical-align: middle; }
+        tr:hover td { background: #f8fafc; }
+        .badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 99px;
+            font-size: .75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .badge-phone { background: #dbeafe; color: #1d4ed8; }
+        .badge-email { background: #dcfce7; color: #166534; }
+
+        #toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: #fff;
+            font-size: .9rem;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,.2);
+            display: none;
+            z-index: 9999;
+            max-width: 320px;
+        }
+        #toast.show { display: block; }
+        #toast.success { background: #16a34a; }
+        #toast.error   { background: #dc2626; }
+
+        .overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,.4);
+            display: none; align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+        .overlay.open { display: flex; }
+        .modal {
+            background: #fff;
+            border-radius: 10px;
+            padding: 28px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 8px 32px rgba(0,0,0,.2);
+        }
+        .modal h3 { margin-bottom: 20px; color: #1e40af; }
+        .modal .form-group { margin-bottom: 14px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+        .empty { text-align: center; padding: 32px; color: #9ca3af; font-size: .9rem; }
+    </style>
+</head>
+<body>
+
+<nav>
+    <h1>Sistema de Contatos</h1>
+    <button id="navPessoas" class="active" onclick="showSection('pessoas')">Pessoas</button>
+    <button id="navContatos" onclick="showSection('contatos')">Contatos</button>
+</nav>
+
+<main>
+
+    <section id="sectionPessoas" class="section active">
+        <div class="card">
+            <h2>Cadastrar / Editar Pessoa</h2>
+            <input type="hidden" id="pessoaId" />
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="pessoaNome">Nome *</label>
+                    <input id="pessoaNome" type="text" placeholder="Nome completo" />
+                </div>
+                <div class="form-group" style="max-width:180px">
+                    <label for="pessoaCpf">CPF *</label>
+                    <input id="pessoaCpf" type="text" placeholder="000.000.000-00" maxlength="14" />
+                </div>
+                <div style="display:flex;gap:8px;align-items:flex-end">
+                    <button class="btn btn-primary" onclick="savePessoa()">Salvar</button>
+                    <button class="btn btn-secondary" onclick="clearPessoaForm()">Limpar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Consulta de Pessoas</h2>
+            <div class="search-row">
+                <input id="searchPessoa" type="text" placeholder="Pesquisar por nome…" oninput="searchPessoas()" />
+                <button class="btn btn-secondary" onclick="document.getElementById('searchPessoa').value=''; loadPessoas()">Limpar</button>
+            </div>
+            <table id="tblPessoas">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Nome</th>
+                        <th>CPF</th>
+                        <th style="width:160px">Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <p id="emptyPessoas" class="empty" style="display:none">Nenhuma pessoa encontrada.</p>
+        </div>
+    </section>
+
+    <section id="sectionContatos" class="section">
+        <div class="card">
+            <h2>Cadastrar / Editar Contato</h2>
+            <input type="hidden" id="contatoId" />
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="contatoPessoa">Pessoa *</label>
+                    <select id="contatoPessoa"></select>
+                </div>
+                <div class="form-group" style="max-width:160px">
+                    <label for="contatoTipo">Tipo *</label>
+                    <select id="contatoTipo">
+                        <option value="telefone">Telefone</option>
+                        <option value="email">E-mail</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="contatoDescricao">Descrição *</label>
+                    <input id="contatoDescricao" type="text" placeholder="(99) 99999-9999 ou email@..." />
+                </div>
+                <div style="display:flex;gap:8px;align-items:flex-end">
+                    <button class="btn btn-primary" onclick="saveContato()">Salvar</button>
+                    <button class="btn btn-secondary" onclick="clearContatoForm()">Limpar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Consulta de Contatos</h2>
+            <div class="search-row" style="margin-bottom:16px">
+                <select id="filterPessoa" onchange="loadContatos()" style="flex:1">
+                    <option value="">Todas as pessoas</option>
+                </select>
+            </div>
+            <table id="tblContatos">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Pessoa</th>
+                        <th>Tipo</th>
+                        <th>Descrição</th>
+                        <th style="width:160px">Ações</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <p id="emptyContatos" class="empty" style="display:none">Nenhum contato encontrado.</p>
+        </div>
+    </section>
+</main>
+
+<div class="overlay" id="confirmOverlay">
+    <div class="modal">
+        <h3>Confirmar exclusão</h3>
+        <p id="confirmMsg">Deseja realmente excluir este registro?</p>
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeConfirm()">Cancelar</button>
+            <button class="btn btn-danger" id="confirmBtn">Excluir</button>
+        </div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const API = '/api';
+
+async function request(method, url, body = null) {
+    const opts = {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+    };
+    if (body) opts.body = JSON.stringify(body);
+    const res  = await fetch(url, opts);
+    return res.json();
+}
+
+function toast(msg, type = 'success') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className   = `show ${type}`;
+    clearTimeout(el._t);
+    el._t = setTimeout(() => el.classList.remove('show'), 3500);
+}
+
+function showSection(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('section' + capitalize(name)).classList.add('active');
+    document.getElementById('nav'     + capitalize(name)).classList.add('active');
+    if (name === 'contatos') { loadPessoaSelects(); loadContatos(); }
+    else loadPessoas();
+}
+const capitalize = s => s.charAt(0).toUpperCase() + s.slice(1);
+
+function openConfirm(msg, onConfirm) {
+    document.getElementById('confirmMsg').textContent = msg;
+    document.getElementById('confirmBtn').onclick = () => { onConfirm(); closeConfirm(); };
+    document.getElementById('confirmOverlay').classList.add('open');
+}
+function closeConfirm() {
+    document.getElementById('confirmOverlay').classList.remove('open');
+}
+
+async function loadPessoas(search = '') {
+    const url  = search ? `${API}/pessoas?search=${encodeURIComponent(search)}` : `${API}/pessoas`;
+    const resp = await request('GET', url);
+    renderPessoas(resp.data ?? []);
+}
+
+function renderPessoas(list) {
+    const tbody = document.querySelector('#tblPessoas tbody');
+    const empty = document.getElementById('emptyPessoas');
+    tbody.innerHTML = '';
+
+    if (!list.length) { empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    list.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${p.id}</td>
+            <td>${esc(p.nome)}</td>
+            <td>${formatCpf(p.cpf)}</td>
+            <td>
+                <button class="btn btn-primary btn-sm" onclick="editPessoa(${p.id})">Editar</button>
+                <button class="btn btn-danger btn-sm"  onclick="deletePessoa(${p.id}, '${esc(p.nome)}')">Excluir</button>
+            </td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+let searchTimer;
+function searchPessoas() {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => loadPessoas(document.getElementById('searchPessoa').value), 300);
+}
+
+async function savePessoa() {
+    const id   = document.getElementById('pessoaId').value;
+    const nome = document.getElementById('pessoaNome').value.trim();
+    const cpf  = document.getElementById('pessoaCpf').value;
+
+    if (!nome || !cpf) { toast('Preencha nome e CPF.', 'error'); return; }
+
+    const body = { nome, cpf };
+    const resp = id
+        ? await request('PUT',  `${API}/pessoas/${id}`, body)
+        : await request('POST', `${API}/pessoas`,       body);
+
+    if (resp.success) {
+        toast(resp.message);
+        clearPessoaForm();
+        loadPessoas();
+    } else {
+        toast(resp.message, 'error');
+    }
+}
+
+async function editPessoa(id) {
+    const resp = await request('GET', `${API}/pessoas/${id}`);
+    if (!resp.success) { toast(resp.message, 'error'); return; }
+    const p = resp.data;
+    document.getElementById('pessoaId').value   = p.id;
+    document.getElementById('pessoaNome').value = p.nome;
+    document.getElementById('pessoaCpf').value  = formatCpf(p.cpf);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deletePessoa(id, nome) {
+    openConfirm(`Excluir a pessoa "${nome}" e todos os seus contatos?`, async () => {
+        const resp = await request('DELETE', `${API}/pessoas/${id}`);
+        if (resp.success) { toast(resp.message); loadPessoas(); }
+        else toast(resp.message, 'error');
+    });
+}
+
+function clearPessoaForm() {
+    ['pessoaId','pessoaNome','pessoaCpf'].forEach(id => document.getElementById(id).value = '');
+}
+
+async function loadPessoaSelects() {
+    const resp = await request('GET', `${API}/pessoas`);
+    const list = resp.data ?? [];
+
+    const form   = document.getElementById('contatoPessoa');
+    const filter = document.getElementById('filterPessoa');
+
+    form.innerHTML   = list.map(p => `<option value="${p.id}">${esc(p.nome)}</option>`).join('');
+    filter.innerHTML = '<option value="">Todas as pessoas</option>' +
+                       list.map(p => `<option value="${p.id}">${esc(p.nome)}</option>`).join('');
+}
+
+async function loadContatos() {
+    const pessoaId = document.getElementById('filterPessoa').value;
+    const url = pessoaId ? `${API}/contatos?pessoaId=${pessoaId}` : `${API}/contatos`;
+    const resp = await request('GET', url);
+    renderContatos(resp.data ?? []);
+}
+
+function renderContatos(list) {
+    const tbody = document.querySelector('#tblContatos tbody');
+    const empty = document.getElementById('emptyContatos');
+    tbody.innerHTML = '';
+
+    if (!list.length) { empty.style.display = 'block'; return; }
+    empty.style.display = 'none';
+
+    list.forEach(c => {
+        const badgeClass = c.tipo === 'email' ? 'badge-email' : 'badge-phone';
+        const label      = c.tipo === 'email' ? 'E-mail'      : 'Telefone';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${c.id}</td>
+            <td>${esc(c.pessoa)}</td>
+            <td><span class="badge ${badgeClass}">${label}</span></td>
+            <td>${esc(c.descricao)}</td>
+            <td>
+                <button class="btn btn-primary btn-sm" onclick="editContato(${c.id})">Editar</button>
+                <button class="btn btn-danger btn-sm"  onclick="deleteContato(${c.id})">Excluir</button>
+            </td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+async function saveContato() {
+    const id        = document.getElementById('contatoId').value;
+    const idPessoa  = document.getElementById('contatoPessoa').value;
+    const tipo      = document.getElementById('contatoTipo').value;
+    const descricao = document.getElementById('contatoDescricao').value.trim();
+
+    if (!idPessoa || !descricao) { toast('Preencha todos os campos.', 'error'); return; }
+
+    const body = { tipo, descricao, idPessoa: parseInt(idPessoa) };
+    const resp = id
+        ? await request('PUT',  `${API}/contatos/${id}`, body)
+        : await request('POST', `${API}/contatos`,       body);
+
+    if (resp.success) {
+        toast(resp.message);
+        clearContatoForm();
+        loadContatos();
+    } else {
+        toast(resp.message, 'error');
+    }
+}
+
+async function editContato(id) {
+    const resp = await request('GET', `${API}/contatos/${id}`);
+    if (!resp.success) { toast(resp.message, 'error'); return; }
+    const c = resp.data;
+    document.getElementById('contatoId').value        = c.id;
+    document.getElementById('contatoPessoa').value    = c.idPessoa;
+    document.getElementById('contatoTipo').value      = c.tipo;
+    document.getElementById('contatoDescricao').value = c.descricao;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteContato(id) {
+    openConfirm('Excluir este contato?', async () => {
+        const resp = await request('DELETE', `${API}/contatos/${id}`);
+        if (resp.success) { toast(resp.message); loadContatos(); }
+        else toast(resp.message, 'error');
+    });
+}
+
+function clearContatoForm() {
+    document.getElementById('contatoId').value        = '';
+    document.getElementById('contatoDescricao').value = '';
+}
+
+function esc(str) {
+    return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function formatCpf(cpf) {
+    const d = String(cpf).replace(/\D/g,'');
+    return d.length === 11 ? d.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : d;
+}
+document.getElementById('pessoaCpf').addEventListener('input', function () {
+    let v = this.value.replace(/\D/g,'').slice(0,11);
+    if (v.length > 9)      v = v.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4');
+    else if (v.length > 6) v = v.replace(/(\d{3})(\d{3})(\d{0,3})/,        '$1.$2.$3');
+    else if (v.length > 3) v = v.replace(/(\d{3})(\d{0,3})/,               '$1.$2');
+    this.value = v;
+});
+
+loadPessoas();
+</script>
+</body>
+</html>
